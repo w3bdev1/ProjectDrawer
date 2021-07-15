@@ -1,23 +1,16 @@
-function ProjectDrawer() abort
-	let l:DirPaths = split(globpath(g:ProjectDrawerPath,"*"), "\n")
-
-	" Confirm string from list of directory paths
-	let l:Counter = 0
-	let l:ConfirmString = ""
-	for l:DirPath in l:DirPaths
-		let l:Counter += 1
-		let l:ConfirmString = l:ConfirmString.."&"..l:Counter..l:DirPath.."\n"
+function PDListOfSubDir() abort
+	" Save all sub directory paths in a list
+	let l:DirPaths = []
+	for l:Path in g:PDPaths 
+		let l:SubDir = split(globpath(l:Path,"*/"), "\n")
+		let l:DirPaths = extend(l:DirPaths, l:SubDir)
 	endfor
-
-	" Store user choice
-	let l:UserChoice = confirm("Select Project Directory", l:ConfirmString, 0)
-	
-	" Change cwd based on user choice
-	if l:UserChoice ==# 0
-		echo 'Aborted!'
-		return
-	else
-		execute "cd "..l:DirPaths[l:UserChoice - 1]
-		echo 'Changed Working Directory to '..getcwd()
-	endif
+	return l:DirPaths
 endfunction
+
+function! PDCustomPathCompletion(A,L,P) abort
+	return PDListOfSubDir()
+endfunction
+
+command! -nargs=1 -complete=customlist,PDCustomPathCompletion PD cd <args> <bar> echo 'CWD → '..getcwd()
+command! PDFZF call fzf#run(fzf#wrap({'source': PDListOfSubDir(), 'sink': 'cd'}))
